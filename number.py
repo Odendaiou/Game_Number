@@ -17,6 +17,8 @@ with st.expander("このページの使い方"):
     3. 回答予想欄に数字を入力し、「結果確認」ボタンを押してください。
     4. 予想が正しい場合、ヒット(位置も数字も正解)とブロー(位置は違うが数字は正解)の数が表示されます。
     5. 予想を繰り返しランダムな数を充てることが出来ればあなたの勝利です。
+    6. ゲームが終了したら「ニューゲーム」ボタンを押して新しいゲームを開始できます。
+    7. 判定のタイミングの関係か各ボタンは2回押さないと反応しないときがありますゆるしてください。
     """)
 
 # ゲームの状態を保持するためのセッション状態
@@ -25,18 +27,20 @@ if "secret" not in st.session_state:
     st.session_state.guesses = []
     st.session_state.game_started = False  # ゲーム開始フラグ
     st.session_state.n = None  # 桁数の初期化
+    st.session_state.game_over = False  # ゲーム終了フラグ
 
 # ゲームが開始していなければ桁数入力とゲーム開始ボタンを表示
 if not st.session_state.game_started:
     n = int(st.number_input("桁数", min_value=1, step=1))
 
-    if st.button("ゲームを開始"):
+    if st.button("ゲームを開始") and n > 0:
         # ランダムな数を生成
         st.session_state.secret = random.sample('123456789', n)
         st.session_state.secret = ''.join(st.session_state.secret)  # リストを文字列に変換
         st.session_state.guesses = []  # ゲーム開始時にリセット
         st.session_state.game_started = True  # ゲーム開始フラグをTrueに設定
         st.session_state.n = n  # 入力された桁数をセッション状態に保存
+        st.session_state.game_over = False  # ゲーム終了フラグをリセット
 else:
     st.write(f"ゲームが開始されました。桁数: {st.session_state.n}桁")
 
@@ -85,6 +89,7 @@ else:
             # ゲームが終わった場合
             if hit == st.session_state.n:
                 st.write("おめでとうございます！正解です！")
+                st.session_state.game_over = True  # ゲーム終了フラグをTrueに設定
             else:
                 st.write("引き続き予想してください。")
 
@@ -93,3 +98,15 @@ else:
         st.write("予想履歴:")
         for idx, (guess, hit, blow) in enumerate(st.session_state.guesses, 1):
             st.write(f"{idx}. 予想: {guess} → ヒット: {hit}, ブロー: {blow}")
+
+    # ゲームが終了していたら「ニューゲーム」ボタンを表示
+    if st.session_state.game_over:
+        if st.button("ニューゲーム"):
+            # ゲーム状態をリセット
+            st.session_state.secret = None
+            st.session_state.guesses = []
+            st.session_state.game_started = False
+            st.session_state.game_over = False
+            st.session_state.n = None
+            st.write("ゲームをリセットしました。")
+            st.session_state.game_started = False  # ゲーム開始前に戻す
